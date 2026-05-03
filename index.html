@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hybrid AI Assistant - Interactive Blueprint</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Embedded CSS for Chart Containers and Specific UI Adjustments */
+        body {
+            background-color: #fafaf9; /* Tailwind stone-50 */
+            color: #292524; /* Tailwind stone-800 */
+            font-family: system-ui, -apple-system, sans-serif;
+            overflow-x: hidden;
+        }
+        
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+            background: white;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        }
+
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+
+        .nav-button {
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .nav-button.active {
+            background-color: #d97706; /* amber-600 */
+            color: white;
+            border-color: #d97706;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            border-color: #d97706;
+        }
+
+        /* Flow Diagram CSS Nodes */
+        .flow-node {
+            background: white;
+            border: 2px solid #e7e5e4;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .flow-node:hover, .flow-node.selected {
+            border-color: #d97706;
+            background-color: #fffbeb; /* amber-50 */
+        }
+        .flow-arrow {
+            font-size: 1.5rem;
+            color: #a8a29e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Hide scrollbar for clean horizontal scrolling areas if needed */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-amber-200 selection:text-amber-900">
+
+<!-- Chosen Palette: Warm Neutrals (Stone/Amber) - Evokes a "Cozy Cafe" atmosphere while remaining professional and structured. -->
+<!-- Application Structure Plan: The SPA is structured as a dynamic dashboard with four main task-oriented views: 1. Executive Overview (Features & UX), 2. Architecture & Data Flow (Interactive system map), 3. Database Topography (Relational vs Vector schemas), and 4. Implementation Roadmap (Gantt-style timeline). This structure is chosen because it logically separates the "What" (Features), the "How" (Architecture/Data), and the "When" (Roadmap) of the source specification, allowing developers and stakeholders to explore the technical blueprint intuitively without scrolling through a dense markdown file. -->
+<!-- Visualization & Content Choices: 
+  - Goal: Inform (Features) -> Method: Interactive Grid -> Interaction: Hover/Click for details -> Justification: Breaks down FR1-FR9 into digestible bites. (HTML/CSS)
+  - Goal: Relationships (Architecture) -> Method: CSS Node Diagram -> Interaction: Click node to reveal data flow -> Justification: Explains the Mermaid sequence diagram interactively without SVG. (HTML/CSS/JS)
+  - Goal: Organize (Databases) -> Method: Tabbed Data Dictionaries -> Interaction: Toggle between SQL/Vector -> Justification: Clarifies the dual-database paradigm. (HTML/JS)
+  - Goal: Change/Timeline (Roadmap) -> Method: Floating Bar Chart -> Interaction: Hover for phase details -> Justification: Visually represents the 9-week, 5-phase schedule. (Chart.js)
+  - Confirming NO SVG/Mermaid used.
+-->
+<!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+<div class="min-h-screen flex flex-col md:flex-row">
+    
+    <!-- Sidebar Navigation -->
+    <nav class="w-full md:w-64 bg-white border-b md:border-r border-stone-200 flex-shrink-0 sticky top-0 md:h-screen overflow-y-auto z-10 p-4 md:p-6 flex flex-col">
+        <div class="mb-8">
+            <h1 class="text-2xl font-bold text-stone-800 tracking-tight">AI Spot Tracker</h1>
+            <p class="text-sm text-stone-500 mt-1">Interactive System Blueprint</p>
+        </div>
+        <div class="flex md:flex-col space-x-2 md:space-x-0 md:space-y-3 overflow-x-auto no-scrollbar pb-2 md:pb-0">
+            <button onclick="navigate('overview')" id="nav-overview" class="nav-button active whitespace-nowrap text-left px-4 py-2.5 rounded-lg border border-stone-200 font-medium text-stone-600 hover:bg-stone-50 focus:outline-none">
+                &#128203; Overview & Features
+            </button>
+            <button onclick="navigate('architecture')" id="nav-architecture" class="nav-button whitespace-nowrap text-left px-4 py-2.5 rounded-lg border border-stone-200 font-medium text-stone-600 hover:bg-stone-50 focus:outline-none">
+                &#9881;&#65039; System Architecture
+            </button>
+            <button onclick="navigate('database')" id="nav-database" class="nav-button whitespace-nowrap text-left px-4 py-2.5 rounded-lg border border-stone-200 font-medium text-stone-600 hover:bg-stone-50 focus:outline-none">
+                &#128193; Data Schemas
+            </button>
+            <button onclick="navigate('roadmap')" id="nav-roadmap" class="nav-button whitespace-nowrap text-left px-4 py-2.5 rounded-lg border border-stone-200 font-medium text-stone-600 hover:bg-stone-50 focus:outline-none">
+                &#128197; Roadmap & Tutorials
+            </button>
+        </div>
+        <div class="mt-auto hidden md:block pt-8">
+            <div class="bg-stone-100 p-4 rounded-lg">
+                <p class="text-xs text-stone-500 uppercase tracking-wider font-semibold mb-2">100% Free Stack</p>
+                <div class="flex flex-wrap gap-1">
+                    <span class="text-xs bg-white border border-stone-200 px-2 py-1 rounded text-stone-600">SvelteKit</span>
+                    <span class="text-xs bg-white border border-stone-200 px-2 py-1 rounded text-stone-600">Capacitor</span>
+                    <span class="text-xs bg-white border border-stone-200 px-2 py-1 rounded text-stone-600">FastAPI</span>
+                    <span class="text-xs bg-white border border-stone-200 px-2 py-1 rounded text-stone-600">Ollama (Local AI)</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 p-4 md:p-8 lg:p-12 max-w-6xl w-full mx-auto">
+
+        <!-- SECTION: Overview -->
+        <section id="sec-overview" class="block animate-fade-in">
+            <header class="mb-8 border-b border-stone-200 pb-6">
+                <h2 class="text-3xl font-bold text-stone-800 mb-3">Product Definition</h2>
+                <p class="text-lg text-stone-600 leading-relaxed max-w-3xl">
+                    This section outlines the functional requirements of the Local-First AI Assistant. 
+                    The application is a comprehensive hyper-local guide and personal workspace tracker. 
+                    Explore the cards below to understand the core capabilities, from GPS mapping to AI-driven receipt OCR and NFC sharing.
+                </p>
+            </header>
+
+            <div class="mb-8">
+                <h3 class="text-xl font-semibold text-stone-800 mb-4">Core Functional Requirements (FR)</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="features-grid">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <div class="bg-white border border-stone-200 rounded-xl p-6 shadow-sm">
+                <h3 class="text-xl font-semibold text-stone-800 mb-4">UX & Target Audience Context</h3>
+                <div class="flex flex-col md:flex-row gap-6">
+                    <div class="flex-1">
+                        <p class="text-stone-600 mb-3"><strong>Target:</strong> Remote workers, cafe-hoppers, and privacy-conscious users running self-hosted environments.</p>
+                        <p class="text-stone-600"><strong>UX Strategy:</strong> Mobile-first approach utilizing Capacitor for Android native feel. Components use bottom-sheets for reachability, skeleton loaders to mask AI latency, and local storage (SQLite) to ensure the app functions robustly even without internet access.</p>
+                    </div>
+                    <div class="flex-1 bg-amber-50 p-4 rounded-lg border border-amber-100">
+                        <h4 class="font-medium text-amber-900 mb-2">Key User Story: Intelligent Discovery</h4>
+                        <p class="text-sm text-amber-800 italic">"As a user, I want to search for a 'cozy and bright afternoon' spot so I can take good photos while working."</p>
+                        <p class="text-sm text-amber-900 mt-2 font-medium">&#8594; Triggers Vector Search on ChromaDB.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: Architecture & Flow -->
+        <section id="sec-architecture" class="hidden animate-fade-in">
+            <header class="mb-8 border-b border-stone-200 pb-6">
+                <h2 class="text-3xl font-bold text-stone-800 mb-3">System Architecture & Data Flow</h2>
+                <p class="text-lg text-stone-600 leading-relaxed max-w-3xl">
+                    This section visualizes the Distributed Hybrid Architecture. The application relies on a lightweight mobile client communicating with a heavy-lifting local server (Mini PC), which in turn delegates complex reasoning to cloud LLMs. Click the nodes below to trace the system flow.
+                </p>
+            </header>
+
+            <!-- Interactive Flow Diagram -->
+            <div class="bg-white p-6 rounded-xl border border-stone-200 shadow-sm mb-8">
+                <h3 class="text-lg font-semibold text-stone-800 mb-6 text-center">Interactive Sequence Flow: Logging a Cafe Visit</h3>
+                
+                <div class="flex flex-col md:flex-row items-center justify-between max-w-4xl mx-auto space-y-4 md:space-y-0">
+                    
+                    <div class="flow-node w-full md:w-1/5" onclick="showFlowInfo('user')">
+                        <div class="text-2xl mb-2">&#128100;</div>
+                        <div class="font-semibold text-sm">User</div>
+                    </div>
+                    
+                    <div class="flow-arrow rotate-90 md:rotate-0">&#10142;</div>
+                    
+                    <div class="flow-node w-full md:w-1/5" onclick="showFlowInfo('app')">
+                        <div class="text-2xl mb-2">&#128241;</div>
+                        <div class="font-semibold text-sm">Mobile App<br><span class="text-xs text-stone-500">(Capacitor/HW)</span></div>
+                    </div>
+                    
+                    <div class="flow-arrow rotate-90 md:rotate-0">&#10142;</div>
+                    
+                    <div class="flow-node w-full md:w-1/5" onclick="showFlowInfo('api')">
+                        <div class="text-2xl mb-2">&#128421;&#65039;</div>
+                        <div class="font-semibold text-sm">FastAPI<br><span class="text-xs text-stone-500">(Mini PC)</span></div>
+                    </div>
+
+                    <div class="flow-arrow rotate-90 md:rotate-0">&#10142;</div>
+                    
+                    <div class="flow-node w-full md:w-1/5" onclick="showFlowInfo('ai')">
+                        <div class="text-2xl mb-2">&#129416;</div>
+                        <div class="font-semibold text-sm">Local LLM<br><span class="text-xs text-stone-500">(Ollama: Llava/DeepSeek)</span></div>
+                    </div>
+                </div>
+
+                <div id="flow-details" class="mt-8 p-4 bg-stone-50 border border-stone-200 rounded-lg min-h-[100px] flex items-center justify-center text-center">
+                    <p class="text-stone-500 italic">Click a node above to view its role in the data flow.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white border border-stone-200 p-5 rounded-xl">
+                    <h4 class="font-semibold text-stone-800 mb-2 border-b pb-2">Client Layer</h4>
+                    <ul class="text-sm text-stone-600 space-y-2 list-disc pl-4">
+                        <li>SvelteKit/React UI</li>
+                        <li>Capacitor JS wrapper</li>
+                        <li>Hardware APIs (GPS, NFC, Camera)</li>
+                        <li>SQLite (Offline cache)</li>
+                    </ul>
+                </div>
+                <div class="bg-white border border-stone-200 p-5 rounded-xl">
+                    <h4 class="font-semibold text-stone-800 mb-2 border-b pb-2">Controller / Data</h4>
+                    <ul class="text-sm text-stone-600 space-y-2 list-disc pl-4">
+                        <li>FastAPI on Mini PC</li>
+                        <li>ChromaDB (Vector storage)</li>
+                        <li>PostgreSQL/SQLite (Relational)</li>
+                        <li>Cloudflare Tunnels (Networking)</li>
+                    </ul>
+                </div>
+                <div class="bg-white border border-stone-200 p-5 rounded-xl">
+                    <h4 class="font-semibold text-stone-800 mb-2 border-b pb-2">Inference Layer</h4>
+                    <ul class="text-sm text-stone-600 space-y-2 list-disc pl-4">
+                        <li>Ollama (`nomic-embed-text`)</li>
+                        <li>DuckDuckGo Search (Python lib)</li>
+                        <li>Local Vision: `llava` (Receipts)</li>
+                        <li>Local Reasoning: `deepseek-r1`</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: Database -->
+        <section id="sec-database" class="hidden animate-fade-in">
+            <header class="mb-8 border-b border-stone-200 pb-6">
+                <h2 class="text-3xl font-bold text-stone-800 mb-3">Database Topography</h2>
+                <p class="text-lg text-stone-600 leading-relaxed max-w-3xl">
+                    The system implements a dual-database paradigm. The structured, transactional data (receipts, WiFi speeds) is handled by a standard relational schema. Semantic, conversational data used by the AI for reasoning is stored in a Vector DB. Select a paradigm below to explore the tables/collections.
+                </p>
+            </header>
+
+            <div class="flex space-x-2 mb-6">
+                <button onclick="toggleDbView('relational')" id="btn-db-relational" class="px-4 py-2 bg-amber-600 text-white rounded-md font-medium text-sm transition-colors">Relational (SQLite/PgSQL)</button>
+                <button onclick="toggleDbView('vector')" id="btn-db-vector" class="px-4 py-2 bg-stone-200 text-stone-700 hover:bg-stone-300 rounded-md font-medium text-sm transition-colors">Vector (ChromaDB)</button>
+            </div>
+
+            <!-- Relational View -->
+            <div id="view-db-relational" class="block">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- DB Cards populated by JS -->
+                    <div id="relational-tables-container" class="contents"></div>
+                </div>
+            </div>
+
+            <!-- Vector View -->
+            <div id="view-db-vector" class="hidden">
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-6 mb-6">
+                    <p class="text-sm text-amber-900">
+                        <strong>Note:</strong> ChromaDB does not use relational tables. It uses <em>Collections</em> of embedded text. The backend synthesizes structured tags into descriptive paragraphs before embedding, allowing the AI to search by <em>meaning</em> (e.g., finding "halal, quiet" locations via mathematical vector similarity).
+                    </p>
+                </div>
+                <div class="grid grid-cols-1 gap-6" id="vector-tables-container">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: Roadmap -->
+        <section id="sec-roadmap" class="hidden animate-fade-in">
+             <header class="mb-8 border-b border-stone-200 pb-6">
+                <h2 class="text-3xl font-bold text-stone-800 mb-3">Roadmap & Dev Tutorials</h2>
+                <p class="text-lg text-stone-600 leading-relaxed max-w-3xl">
+                    To build this complex hybrid system efficiently without any paid cloud services, development is split into 5 distinct modules over a 9-week timeline. Click <strong>"View Steps"</strong> on any phase to see the step-by-step tutorial.
+                </p>
+            </header>
+
+            <!-- Chart Container for Timeline -->
+            <div class="chart-container mb-8">
+                <canvas id="roadmapChart"></canvas>
+            </div>
+
+            <div class="bg-white border border-stone-200 rounded-xl overflow-hidden shadow-sm">
+                <div class="bg-stone-100 px-6 py-3 border-b border-stone-200">
+                    <h3 class="font-semibold text-stone-800">Phase Details</h3>
+                </div>
+                <div class="divide-y divide-stone-100" id="phase-details-list">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<!-- JavaScript Logic -->
+<script>
+    // --- Data Store --- //
+    const appData = {
+        features: [
+            { 
+                id: "FR1", title: "Location & Mapping", desc: "GPS coordinates, native Map redirection, and distance/price filtering.", icon: "&#128205;",
+                flow: ["Capacitor Geolocation API fetches Lat/Long", "Free Nominatim API reverse-geocodes neighborhood", "JS Haversine formula sorts SQLite cached spots", "UI displays sorted grid & Map intent link"],
+                userFlow: [{icon: '📱', text: 'Open App'}, {icon: '📍', text: 'Tap "Near Me"'}, {icon: '🗺️', text: 'View Map Results'}]
+            },
+            { 
+                id: "FR2", title: "Intelligent Discovery", desc: "Vector search based on abstract descriptions (e.g., 'cozy afternoon').", icon: "&#128269;",
+                flow: ["User inputs abstract query in Svelte UI", "FastAPI receives query via Localtunnel", "Ollama (nomic-embed-text) embeds query", "ChromaDB finds nearest vector matches", "Ollama (DeepSeek) formats response -> UI"],
+                userFlow: [{icon: '🔍', text: 'Type "Cozy spot"'}, {icon: '🧠', text: 'AI Searches'}, {icon: '✨', text: 'See Matches'}]
+            },
+            { 
+                id: "FR3", title: "Connectivity Log", desc: "Speedtest via free JS ping logic and secure encrypted WiFi password vault.", icon: "&#128246;",
+                flow: ["JS fetches 1MB payload from free CDN to measure DL/Latency", "App encrypts WiFi password via Capacitor Preferences", "Speed & Security metrics saved to local SQLite vault"],
+                userFlow: [{icon: '📶', text: 'Tap "Speedtest"'}, {icon: '⏱️', text: 'Test Runs'}, {icon: '💾', text: 'Save & Vault'}]
+            },
+            { 
+                id: "FR4", title: "Atmosphere Tags", desc: "Log aesthetics, lighting, seating types, and leisure facilities.", icon: "&#127912;",
+                flow: ["User toggles UI tags (e.g., 'Quiet', 'Warm Lighting')", "Saved locally to SQLite as JSON array", "Sync triggers POST to FastAPI", "FastAPI appends tags to ChromaDB document"],
+                userFlow: [{icon: '➕', text: 'Add New Spot'}, {icon: '🏷️', text: 'Select Tags'}, {icon: '✅', text: 'Save Details'}]
+            },
+            { 
+                id: "FR5", title: "Menu Metadata", desc: "Track price ranges, dietary markers (Halal/Vegan), and cuisine types.", icon: "&#127869;",
+                flow: ["User inputs min/max price and dietary checkboxes", "Data cached in SQLite", "Background sync pushes to FastAPI", "Stored in structured Relational DB (PgSQL/SQLite)"],
+                userFlow: [{icon: '🧾', text: 'Open Menu Data'}, {icon: '🥗', text: 'Check Dietary'}, {icon: '💰', text: 'Set Prices'}]
+            },
+            { 
+                id: "FR6", title: "Receipt Scanner", desc: "Local AI OCR (Ollama/Llava) to scan receipts, parse items, and summarize spending.", icon: "&#129534;",
+                flow: ["Capacitor Camera captures receipt", "App compresses image & POSTs to FastAPI", "FastAPI triggers local Ollama (Llava vision model)", "Llava extracts JSON total/items", "UI updates spending history"],
+                userFlow: [{icon: '📷', text: 'Snap Receipt'}, {icon: '⚙️', text: 'AI Analyzes'}, {icon: '📊', text: 'View Spending'}]
+            },
+            { 
+                id: "FR7", title: "Media Compression", desc: "Local image/video compression to save storage space before sync.", icon: "&#128248;",
+                flow: ["Capacitor Camera returns raw URI", "HTML5 Canvas draws and scales image to max 1080p", "Canvas exports as compressed WebP", "Capacitor Filesystem saves optimized file locally"],
+                userFlow: [{icon: '📸', text: 'Take Photo'}, {icon: '🗜️', text: 'Compresses'}, {icon: '🖼️', text: 'Save to Gallery'}]
+            },
+            { 
+                id: "FR8", title: "Offline Sync", desc: "SQLite local storage that syncs to the Mini PC server automatically.", icon: "&#128450;",
+                flow: ["Capacitor Network plugin detects 'Online' status", "App reads SQLite rows where `is_synced = 0`", "POST /api/sync sends batch payload", "FastAPI returns 200 OK -> App updates SQLite to `is_synced = 1`"],
+                userFlow: [{icon: '📝', text: 'Log Spot Offline'}, {icon: '🌐', text: 'Reconnect WiFi'}, {icon: '🔄', text: 'Auto-Syncs'}]
+            },
+            { 
+                id: "FR9", title: "NFC Sharing", desc: "Encode spot data into NDEF messages for tap-to-share offline functionality.", icon: "&#128242;",
+                flow: ["User taps 'Share' on Spot Detail view", "App constructs deep link URI (e.g., app://spot?id=123&name=Cafe)", "Capacitor NFC triggers `write()`", "Target device reads NDEF record and opens specific Spot view"],
+                userFlow: [{icon: '📤', text: 'Tap "Share"'}, {icon: '📱', text: 'Touch Phones'}, {icon: '📥', text: 'Friend Gets Link'}]
+            }
+        ],
+        flowDetails: {
+            user: "<strong>1. User Action:</strong> Logs a new Cafe Visit. Snaps a photo of the receipt and the atmosphere.",
+            app: "<strong>2. Mobile App:</strong> Fetches GPS and runs a local network test. Compresses the photos locally to save bandwidth. Packages data into a JSON payload.",
+            api: "<strong>3. FastAPI Server:</strong> Receives payload via Localtunnel. Saves structured data to Relational DB. Forwards images to local Ollama instance.",
+            ai: "<strong>4. AI Inference (100% Local):</strong> Ollama runs 'Llava' model to perform OCR and extract spending. Returns semantic tags to API, updating the local ChromaDB Vector store."
+        },
+        relationalDb: [
+            {
+                table: "SPOTS",
+                desc: "Core location entity.",
+                fields: ["id (UUID, PK)", "name", "latitude, longitude", "atmosphere_tags (JSON)", "facility_tags (JSON)", "price_min, price_max", "is_synced (Boolean)"]
+            },
+            {
+                table: "RECEIPTS",
+                desc: "Financial tracking from OCR.",
+                fields: ["id (PK)", "spot_id (FK)", "visit_date", "total_spent (Float)", "items (JSON from OCR)", "ocr_raw_text"]
+            },
+            {
+                table: "WIFI_RECORDS",
+                desc: "Network quality and security.",
+                fields: ["id (PK)", "spot_id (FK)", "ssid", "encrypted_password (Vault)", "dl_speed_mbps", "ul_speed_mbps"]
+            },
+            {
+                table: "MEDIA",
+                desc: "Compressed visual context.",
+                fields: ["id (PK)", "spot_id (FK)", "file_path", "type (image/video)", "is_compressed (Boolean)"]
+            }
+        ],
+        vectorDb: [
+            {
+                collection: "spots_semantic_index",
+                desc: "Used for finding cafes based on complex, abstract queries.",
+                doc: "Synthesized text (e.g., 'Atmosphere is cozy, warm tone lighting. Cuisine is Asian, Halal. Price 50k-100k.')",
+                embedding: "[0.012, -0.045, 0.112...] (Generated by Ollama)",
+                metadata: "name, latitude, longitude, is_halal, has_wifi (Used for pre-filtering to save compute)"
+            },
+            {
+                collection: "user_memories_index",
+                desc: "Stores specific user experiences or OCR-derived context.",
+                doc: "Raw text notes (e.g., 'The matcha latte here is amazing but music was loud. Good WiFi.')",
+                embedding: "[0.051, 0.022, -0.019...]",
+                metadata: "spot_id, timestamp, source (user_note | ocr_summary)"
+            }
+        ],
+        phases: [
+            { 
+                phase: "Phase 1: Foundation (UI & Local Storage)", 
+                weeks: "Weeks 1-2", 
+                details: "Initialize the frontend stack, UI library, and local SQLite database for offline support.", 
+                status: "In Progress",
+                steps: [
+                    "<b>Step 1:</b> Initialize SvelteKit project (`npm create svelte@latest app`). Install Tailwind CSS.",
+                    "<b>Step 2:</b> Add Capacitor to the web project (`npm i @capacitor/core`, `npx cap init`).",
+                    "<b>Step 3:</b> Install the free SQLite plugin (`npm i @capacitor-community/sqlite`). Follow setup for Android.",
+                    "<b>Step 4:</b> Build the primary UI shell (Bottom Navigation Bar) with Light/Dark mode toggles.",
+                    "<b>Step 5:</b> Create the 'Add Spot' form UI to capture Name, Price, and Facility tags locally."
+                ]
+            },
+            { 
+                phase: "Phase 2: Sensors & Connectivity", 
+                weeks: "Weeks 3-4", 
+                details: "Integrate native device hardware APIs for GPS and network speed testing.", 
+                status: "Pending",
+                steps: [
+                    "<b>Step 1:</b> Install Geolocation plugin (`npm i @capacitor/geolocation`). Request permissions on Android.",
+                    "<b>Step 2:</b> Add logic to auto-fill Lat/Long when the 'Add Spot' form opens.",
+                    "<b>Step 3:</b> Implement a free JS-based ping/speed test (downloading a small test file from a free CDN to measure latency/speed).",
+                    "<b>Step 4:</b> Build the encrypted WiFi Vault UI. Save SSIDs and passwords securely using Capacitor Preferences.",
+                    "<b>Step 5:</b> Implement distance calculation logic (Haversine formula) to sort the 'Saved Spots' list."
+                ]
+            },
+            { 
+                phase: "Phase 3: The Local AI Brain (Mini PC)", 
+                weeks: "Weeks 5-6", 
+                details: "Setup the self-hosted backend using FastAPI and Ollama for free OCR and logic.", 
+                status: "Pending",
+                steps: [
+                    "<b>Step 1:</b> Install Python & FastAPI on your Mini PC. Create basic CRUD endpoints (`/sync`, `/recommend`).",
+                    "<b>Step 2:</b> Install Ollama on the Mini PC. Open terminal: `ollama run llava` (for OCR) and `ollama run deepseek-r1:7b` (for text).",
+                    "<b>Step 3:</b> Write Python logic using the `ollama` Python library to send receipt images to the `llava` model and extract JSON.",
+                    "<b>Step 4:</b> Implement image compression in the Svelte app before sending images to the FastAPI backend to save bandwidth.",
+                    "<b>Step 5:</b> Expose your Mini PC securely for free using Localtunnel (`npx localtunnel --port 8000`) or Tailscale."
+                ]
+            },
+            { 
+                phase: "Phase 4: Intelligent Discovery", 
+                weeks: "Weeks 7-8", 
+                details: "Implement Vector Database (ChromaDB) for semantic search capabilities.", 
+                status: "Pending",
+                steps: [
+                    "<b>Step 1:</b> Install ChromaDB (`pip install chromadb`) in your FastAPI environment.",
+                    "<b>Step 2:</b> Pull the embedding model in Ollama (`ollama pull nomic-embed-text`).",
+                    "<b>Step 3:</b> Create a Python script that takes synced 'Spots', formats them into a descriptive paragraph, and stores them in ChromaDB.",
+                    "<b>Step 4:</b> Build the 'Discovery' UI in the app. Add an input bar for abstract queries (e.g., 'cozy halal cafe').",
+                    "<b>Step 5:</b> Link the search UI to FastAPI. FastAPI uses Ollama to embed the query, searches ChromaDB, and returns the closest matches."
+                ]
+            },
+            { 
+                phase: "Phase 5: Social Sharing (NFC)", 
+                weeks: "Week 9", 
+                details: "Integrate peer-to-peer offline sharing using NFC technology.", 
+                status: "Pending",
+                steps: [
+                    "<b>Step 1:</b> Install the NFC plugin (`npm install @capawesome-team/capacitor-nfc`).",
+                    "<b>Step 2:</b> Configure AndroidManifest.xml to request NFC permissions and set up intent filters for your custom URL scheme.",
+                    "<b>Step 3:</b> Build a 'Share' button UI on the Spot Detail page.",
+                    "<b>Step 4:</b> Write Javascript logic to format spot data (Name, Lat, Long) into an NDEF URI record.",
+                    "<b>Step 5:</b> Test tapping two Android phones together to ensure the deep link opens the app and displays the shared spot."
+                ]
+            }
+        ]
+    };
+
+    let roadmapChartInstance = null;
+
+    // --- Initialization --- //
+    document.addEventListener("DOMContentLoaded", () => {
+        renderFeatures();
+        renderRelationalDb();
+        renderVectorDb();
+        renderPhases();
+        
+        // Initialize chart on load, but it might be hidden
+        initChart();
+    });
+
+    // --- Navigation Logic --- //
+    function navigate(sectionId) {
+        // Update Buttons
+        document.querySelectorAll('.nav-button').forEach(btn => {
+            btn.classList.remove('active', 'bg-amber-600', 'text-white');
+            btn.classList.add('text-stone-600');
+        });
+        const activeBtn = document.getElementById(`nav-${sectionId}`);
+        activeBtn.classList.remove('text-stone-600');
+        activeBtn.classList.add('active', 'bg-amber-600', 'text-white');
+
+        // Update Sections
+        document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
+        document.getElementById(`sec-${sectionId}`).classList.remove('hidden');
+
+        // Trigger chart resize if roadmap is shown to fix hidden canvas sizing bug
+        if(sectionId === 'roadmap' && roadmapChartInstance) {
+            roadmapChartInstance.resize();
+        }
+    }
+
+    // --- Render Functions --- //
+    function renderFeatures() {
+        const container = document.getElementById('features-grid');
+        appData.features.forEach(f => {
+            const card = document.createElement('div');
+            card.className = "bg-white p-5 rounded-xl border border-stone-200 card-hover cursor-pointer flex flex-col";
+            
+            const sysFlowHtml = f.flow.map((step, i) => `
+                <div class="text-stone-600 border-l-2 border-amber-400 pl-2 py-0.5 relative">
+                    <span class="absolute -left-[5px] top-2 w-2 h-2 rounded-full bg-amber-500"></span>
+                    <span class="font-medium text-amber-700 text-[10px] uppercase mr-1">Step ${i+1}</span> ${step}
+                </div>
+            `).join('');
+
+            const userFlowHtml = f.userFlow.map((step, i) => `
+                <div class="flex flex-col items-center text-center w-1/3">
+                    <span class="text-2xl mb-1">${step.icon}</span>
+                    <span class="text-[10px] text-sky-800 font-medium leading-tight">${step.text}</span>
+                </div>
+                ${i < f.userFlow.length - 1 ? '<div class="text-sky-300 font-bold">&#10142;</div>' : ''}
+            `).join('');
+
+            card.innerHTML = `
+                <div class="flex items-center space-x-3 mb-2">
+                    <span class="text-2xl bg-stone-100 p-2 rounded-lg">${f.icon}</span>
+                    <h4 class="font-bold text-stone-800">${f.id}: ${f.title}</h4>
+                </div>
+                <p class="text-sm text-stone-600 leading-relaxed mb-4 flex-grow">${f.desc}</p>
+                
+                <div class="mt-auto border-t border-stone-100 pt-3 flex flex-col space-y-2">
+                    <div>
+                        <button onclick="toggleCardFlow('fr-user-flow-${f.id}', 'icon-fr-user-flow-${f.id}')" class="text-xs font-bold text-sky-600 hover:text-sky-800 flex items-center transition-colors">
+                            <span id="icon-fr-user-flow-${f.id}" class="mr-1">&#9656;</span> View User Flow
+                        </button>
+                        <div id="fr-user-flow-${f.id}" class="hidden mt-2 p-3 bg-sky-50 border border-sky-100 rounded text-xs shadow-inner flex items-center justify-between">
+                            ${userFlowHtml}
+                        </div>
+                    </div>
+                    <div>
+                        <button onclick="toggleCardFlow('fr-sys-flow-${f.id}', 'icon-fr-sys-flow-${f.id}')" class="text-xs font-bold text-amber-600 hover:text-amber-800 flex items-center transition-colors">
+                            <span id="icon-fr-sys-flow-${f.id}" class="mr-1">&#9656;</span> View System Flow
+                        </button>
+                        <div id="fr-sys-flow-${f.id}" class="hidden mt-2 p-3 bg-stone-50 border border-stone-100 rounded text-xs space-y-1.5 shadow-inner">
+                            ${sysFlowHtml}
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function renderRelationalDb() {
+        const container = document.getElementById('relational-tables-container');
+        appData.relationalDb.forEach(t => {
+            const card = document.createElement('div');
+            card.className = "bg-white border border-stone-200 rounded-lg p-5 shadow-sm";
+            let fieldsHtml = t.fields.map(field => `
+                <li class="flex items-start">
+                    <span class="text-amber-600 mr-2 font-bold">&bull;</span>
+                    <span class="text-stone-700 font-mono text-xs">${field}</span>
+                </li>
+            `).join('');
+
+            card.innerHTML = `
+                <div class="flex justify-between items-center mb-3 border-b border-stone-100 pb-2">
+                    <h4 class="font-bold text-stone-800 text-lg flex items-center">
+                        <span class="mr-2">&#128451;</span> ${t.table}
+                    </h4>
+                </div>
+                <p class="text-sm text-stone-500 mb-4 italic">${t.desc}</p>
+                <ul class="space-y-1.5">${fieldsHtml}</ul>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function renderVectorDb() {
+        const container = document.getElementById('vector-tables-container');
+        appData.vectorDb.forEach(c => {
+            const card = document.createElement('div');
+            card.className = "bg-white border border-stone-200 rounded-lg p-5 shadow-sm";
+            card.innerHTML = `
+                <h4 class="font-bold text-stone-800 text-lg mb-2 flex items-center">
+                    <span class="mr-2">&#129416;</span> ${c.collection}
+                </h4>
+                <p class="text-sm text-stone-600 mb-4">${c.desc}</p>
+                <div class="space-y-3">
+                    <div class="bg-stone-50 p-3 rounded border border-stone-100">
+                        <span class="text-xs font-bold text-stone-500 uppercase tracking-wider block mb-1">Document (String)</span>
+                        <p class="text-sm font-mono text-stone-800">${c.doc}</p>
+                    </div>
+                    <div class="bg-stone-50 p-3 rounded border border-stone-100">
+                        <span class="text-xs font-bold text-stone-500 uppercase tracking-wider block mb-1">Embedding (Vector)</span>
+                        <p class="text-sm font-mono text-amber-700">${c.embedding}</p>
+                    </div>
+                    <div class="bg-stone-50 p-3 rounded border border-stone-100">
+                        <span class="text-xs font-bold text-stone-500 uppercase tracking-wider block mb-1">Metadata (JSON Object)</span>
+                        <p class="text-sm font-mono text-stone-800">${c.metadata}</p>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function renderPhases() {
+        const container = document.getElementById('phase-details-list');
+        appData.phases.forEach((p, index) => {
+            const row = document.createElement('div');
+            row.className = "flex flex-col border-b border-stone-100 last:border-0";
+            
+            let statusBadgeClass = "bg-stone-200 text-stone-600";
+            if (p.status === "Completed") statusBadgeClass = "bg-green-100 text-green-800";
+            if (p.status === "In Progress") statusBadgeClass = "bg-blue-100 text-blue-800";
+            
+            const stepsHtml = p.steps.map(step => `<li class="text-sm text-stone-600 py-1 border-b border-stone-100 last:border-0">${step}</li>`).join('');
+
+            row.innerHTML = `
+                <div class="px-6 py-4 flex flex-col md:flex-row md:items-start gap-2 hover:bg-stone-50 transition-colors">
+                    <div class="w-full md:w-1/3">
+                        <span class="inline-block bg-amber-100 text-amber-800 text-xs font-bold px-2 py-1 rounded mb-1">${p.weeks}</span>
+                        <span class="inline-block ${statusBadgeClass} text-xs font-bold px-2 py-1 rounded mb-1 ml-2">${p.status}</span>
+                        <h5 class="font-semibold text-stone-800">${p.phase}</h5>
+                    </div>
+                    <div class="w-full md:w-2/3">
+                        <p class="text-sm text-stone-600 leading-relaxed mb-3">${p.details}</p>
+                        <button onclick="toggleTutorial(${index})" class="text-xs font-bold text-amber-600 hover:text-amber-800 flex items-center transition-colors">
+                            <span id="icon-tut-${index}" class="mr-1">&#9656;</span> View Tutorial Steps
+                        </button>
+                    </div>
+                </div>
+                <div id="tut-${index}" class="hidden bg-stone-50 px-6 py-4 border-t border-stone-100 shadow-inner">
+                    <h6 class="font-semibold text-stone-800 text-sm mb-2">Development Steps:</h6>
+                    <ul class="space-y-1">
+                        ${stepsHtml}
+                    </ul>
+                </div>
+            `;
+            container.appendChild(row);
+        });
+    }
+
+    // --- Interactive Logic --- //
+    function toggleCardFlow(divId, iconId) {
+        const flowDiv = document.getElementById(divId);
+        const iconSpan = document.getElementById(iconId);
+        
+        if (flowDiv.classList.contains('hidden')) {
+            flowDiv.classList.remove('hidden');
+            iconSpan.innerHTML = '&#9662;'; // Down arrow
+        } else {
+            flowDiv.classList.add('hidden');
+            iconSpan.innerHTML = '&#9656;'; // Right arrow
+        }
+    }
+
+    function toggleTutorial(index) {
+        const tutDiv = document.getElementById(`tut-${index}`);
+        const iconSpan = document.getElementById(`icon-tut-${index}`);
+        
+        if (tutDiv.classList.contains('hidden')) {
+            tutDiv.classList.remove('hidden');
+            iconSpan.innerHTML = '&#9662;'; // Down arrow
+        } else {
+            tutDiv.classList.add('hidden');
+            iconSpan.innerHTML = '&#9656;'; // Right arrow
+        }
+    }
+
+    function showFlowInfo(nodeId) {
+        // Reset node styles
+        document.querySelectorAll('.flow-node').forEach(node => {
+            node.classList.remove('selected', 'bg-amber-50', 'border-amber-600');
+        });
+        // Style clicked node
+        event.currentTarget.classList.add('selected', 'bg-amber-50', 'border-amber-600');
+        
+        // Update detail text
+        const detailBox = document.getElementById('flow-details');
+        detailBox.innerHTML = `<p class="text-stone-700 text-left w-full md:w-3/4 mx-auto">${appData.flowDetails[nodeId]}</p>`;
+    }
+
+    function toggleDbView(viewType) {
+        const btnRel = document.getElementById('btn-db-relational');
+        const btnVec = document.getElementById('btn-db-vector');
+        const viewRel = document.getElementById('view-db-relational');
+        const viewVec = document.getElementById('view-db-vector');
+
+        if (viewType === 'relational') {
+            btnRel.classList.replace('bg-stone-200', 'bg-amber-600');
+            btnRel.classList.replace('text-stone-700', 'text-white');
+            btnVec.classList.replace('bg-amber-600', 'bg-stone-200');
+            btnVec.classList.replace('text-white', 'text-stone-700');
+            viewRel.classList.remove('hidden');
+            viewVec.classList.add('hidden');
+        } else {
+            btnVec.classList.replace('bg-stone-200', 'bg-amber-600');
+            btnVec.classList.replace('text-stone-700', 'text-white');
+            btnRel.classList.replace('bg-amber-600', 'bg-stone-200');
+            btnRel.classList.replace('text-white', 'text-stone-700');
+            viewVec.classList.remove('hidden');
+            viewRel.classList.add('hidden');
+        }
+    }
+
+    // --- Chart.js Implementation --- //
+    function initChart() {
+        const ctx = document.getElementById('roadmapChart').getContext('2d');
+        
+        // Using floating bars [start, end] for a Gantt-like timeline
+        // X-axis represents weeks (0 to 9)
+        const chartData = {
+            labels: [
+                'P1: Foundation', 
+                'P2: Sensors & Conn', 
+                'P3: AI Brain', 
+                'P4: Discovery', 
+                'P5: Social & Polish'
+            ],
+            datasets: [{
+                label: 'Development Schedule',
+                data: [
+                    [0, 2], // Phase 1: Weeks 1-2
+                    [2, 4], // Phase 2: Weeks 3-4
+                    [4, 6], // Phase 3: Weeks 5-6
+                    [6, 8], // Phase 4: Weeks 7-8
+                    [8, 9]  // Phase 5: Week 9
+                ],
+                backgroundColor: 'rgba(217, 119, 6, 0.8)', // Tailwind amber-600
+                borderColor: 'rgba(180, 83, 9, 1)', // Tailwind amber-700
+                borderWidth: 1,
+                borderRadius: 4,
+                barPercentage: 0.6
+            }]
+        };
+
+        roadmapChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: chartData,
+            options: {
+                indexAxis: 'y', // Makes it a horizontal bar chart
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let start = context.raw[0];
+                                let end = context.raw[1];
+                                return `Week ${start+1} to Week ${end}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        min: 0,
+                        max: 9,
+                        title: {
+                            display: true,
+                            text: 'Timeline (Weeks)',
+                            color: '#78716c',
+                            font: { weight: 'bold' }
+                        },
+                        ticks: {
+                            stepSize: 1,
+                            callback: function(value) { return 'Wk ' + value; }
+                        },
+                        grid: {
+                            color: '#f5f5f4'
+                        }
+                    },
+                    y: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            font: {
+                                family: 'system-ui, sans-serif',
+                                size: 12
+                            },
+                            color: '#44403c'
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+</script>
+</body>
+</html>
